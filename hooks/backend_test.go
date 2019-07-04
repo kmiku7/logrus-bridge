@@ -32,8 +32,8 @@ func TestBackend(t *testing.T) {
 		t.Errorf("Open temporary file failed, err: %v", err)
 	}
 	defer func() {
-		tmpFile.Close()
-		os.Remove(tmpFile.Name())
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
 	}()
 
 	ioBackend := &IOBackend{
@@ -53,7 +53,9 @@ func TestBackend(t *testing.T) {
 	warningMessage := "This is a warning message."
 	logger.Warn(warningMessage)
 
-	tmpFile.Seek(0, 0)
+	if _, err = tmpFile.Seek(0, 0); err != nil {
+		t.Errorf("Seek temporary file failed, err: %v", err)
+	}
 	contents, err := ioutil.ReadAll(tmpFile)
 	if err != nil {
 		t.Errorf("Read result contents failed, err: %v", err)

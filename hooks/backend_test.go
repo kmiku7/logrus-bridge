@@ -1,9 +1,11 @@
 package hooks
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -25,22 +27,21 @@ func (b *IOBackend) Log(level logrus.Level, message []byte) error {
 }
 
 func TestBackend(t *testing.T) {
-	log := logrus.New()
-
 	tmpFile, err := ioutil.TempFile("", "test_backend")
 	if err != nil {
 		t.Errorf("Open temporary file failed, err: %v", err)
 	}
 	defer func() {
 		tmpFile.Close()
+		os.Remove(tmpFile.Name())
 	}()
 
-	ioBackend := IOBackend{
+	ioBackend := &IOBackend{
 		Writer: tmpFile,
 	}
 	hook := NewBackendHook(
 		ioBackend,
-		logrus.TextFormatter(),
+		&logrus.TextFormatter{},
 		logrus.AllLevels,
 	)
 	logger := logrus.New()
@@ -52,9 +53,15 @@ func TestBackend(t *testing.T) {
 	warningMessage := "This is a warning message."
 	logger.Warn(warningMessage)
 
+	tmpFile.Seek(0, 0)
 	contents, err := ioutil.ReadAll(tmpFile)
 	if err != nil {
 		t.Errorf("Read result contents failed, err: %v", err)
 	}
-	fmt.Println(contents)
+	if !bytes.Contains(contents, []byte("level=info msg=\"This is a info message.\"")) {
+		t.Errorf("Info message does not match, output: %s", string(contents))
+	}
+	if !bytes.Contains(contents, []byte("level=warning msg=\"This is a warning message.\"")) {
+		t.Errorf("Warn message does not match, output: %s", string(contents))
+	}
 }

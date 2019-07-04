@@ -20,8 +20,8 @@ type backendHook struct {
 
 func NewBackendHook(
 	backend Backend, formatter logrus.Formatter, levels []logrus.Level,
-) *BackendHook {
-	return &BackendHook{
+) *backendHook {
+	return &backendHook{
 		backend:   backend,
 		formatter: formatter,
 		levels:    levels,
@@ -37,4 +37,8 @@ func (hook *backendHook) Fire(entry *logrus.Entry) error {
 		return err
 	}
 	return nil
+}
+
+func (hook *backendHook) Levels() []logrus.Level {
+	return hook.levels
 }
